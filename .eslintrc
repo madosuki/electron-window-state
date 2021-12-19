@@ -7,9 +7,6 @@
         "builtin": true,
         "es6": true
     },
-    "ecmaFeatures": {
-      "modules": true,
-    },
     "rules": {
         "camelcase": 2,
         "curly": [ 2, "all" ],

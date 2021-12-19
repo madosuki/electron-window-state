@@ -16,7 +16,7 @@ module.exports = function (options) {
     file: 'window-state.json',
     path: app.getPath('userData'),
     maximize: true,
-    fullScreen: true
+    fullScreen: true,
   }, options);
   const fullStoreFileName = path.join(config.path, config.file);
 
@@ -25,11 +25,11 @@ module.exports = function (options) {
   }
 
   function hasBounds() {
-    return state &&
-      Number.isInteger(state.x) &&
-      Number.isInteger(state.y) &&
-      Number.isInteger(state.width) && state.width > 0 &&
-      Number.isInteger(state.height) && state.height > 0;
+    return state
+      && Number.isInteger(state.x)
+      && Number.isInteger(state.y)
+      && Number.isInteger(state.width) && state.width > 0
+      && Number.isInteger(state.height) && state.height > 0;
   }
 
   function resetStateToDefault() {
@@ -41,19 +41,18 @@ module.exports = function (options) {
       height: config.defaultHeight || 600,
       x: undefined,
       y: undefined,
-      displayBounds
+      displayBounds,
     };
   }
 
   function windowWithinBounds(bounds) {
     return (
-      state.x >= bounds.x &&
-      state.y >= bounds.y &&
-      state.x + state.width <= bounds.x + bounds.width &&
-      state.y + state.height <= bounds.y + bounds.height
+      state.x >= bounds.x
+      && state.y >= bounds.y
+      && state.x + state.width <= bounds.x + bounds.width
+      && state.y + state.height <= bounds.y + bounds.height
     );
   }
-
 
   function resizeAndReplaceWindowForWorkArea(display) {
     if (state.isFullScreen || state.isMaximized) {
@@ -68,22 +67,22 @@ module.exports = function (options) {
       state.height = display.workArea.height;
     }
 
-    // for left taskbar
+    // For left taskbar
     if (state.x < display.workArea.x) {
       state.x = display.workArea.x;
     }
 
-    // for right taskbar
+    // For right taskbar
     if (state.x + state.width > display.workArea.width) {
       state.x = display.workArea.x + display.workArea.width - state.width;
     }
 
-    // for top taskbar
+    // For top taskbar
     if (state.y < display.bounds.height - display.workArea.height) {
       state.y = display.workArea.y;
     }
 
-    // for bottom taskbar
+    // For bottom taskbar
     if (state.y + state.height > display.workArea.height) {
       state.y = display.workArea.y + display.workArea.height - state.height;
     }
@@ -118,6 +117,7 @@ module.exports = function (options) {
     if (!win) {
       return;
     }
+
     // Don't throw an error when window was closed
     try {
       const winBounds = win.getBounds();
@@ -127,32 +127,34 @@ module.exports = function (options) {
         state.width = winBounds.width;
         state.height = winBounds.height;
       }
+
       state.isMaximized = win.isMaximized();
       state.isFullScreen = win.isFullScreen();
       state.displayBounds = screen.getDisplayMatching(winBounds).bounds;
-    } catch (err) {}
+    } catch {}
   }
 
   function checkUpdatedStateCompareToReadedData() {
     const checkUpdateDisplayBounds = () => {
-      if (readedData.displayBounds.x !== state.displayBounds.x ||
-        readedData.displayBounds.y !== state.displayBounds.y ||
-        readedData.displayBounds.width !== state.displayBounds.width ||
-        readedData.displayBounds.height !== state.displayBounds.height) {
-          return true;
-        }
-        return false;
-    };
-  
-    if (readedData.x !== state.x || 
-      readedData.y !== state.y || 
-      readedData.width !== state.width ||
-      readedData.height !== state.height ||
-      readedData.isMaximized !== state.isMaximized ||
-      readedData.isFullScreen !== state.isFullScreen || 
-      checkUpdateDisplayBounds()) {
+      if (readedData.displayBounds.x !== state.displayBounds.x
+        || readedData.displayBounds.y !== state.displayBounds.y
+        || readedData.displayBounds.width !== state.displayBounds.width
+        || readedData.displayBounds.height !== state.displayBounds.height) {
         return true;
       }
+
+      return false;
+    };
+
+    if (readedData.x !== state.x
+      || readedData.y !== state.y
+      || readedData.width !== state.width
+      || readedData.height !== state.height
+      || readedData.isMaximized !== state.isMaximized
+      || readedData.isFullScreen !== state.isFullScreen
+      || checkUpdateDisplayBounds()) {
+      return true;
+    }
 
     return false;
   }
@@ -171,7 +173,7 @@ module.exports = function (options) {
     try {
       mkdirp.sync(path.dirname(fullStoreFileName));
       jsonfile.writeFileSync(fullStoreFileName, state);
-    } catch (err) {
+    } catch {
       // Don't care
     }
   }
@@ -196,9 +198,11 @@ module.exports = function (options) {
     if (config.maximize && state.isMaximized) {
       win.maximize();
     }
+
     if (config.fullScreen && state.isFullScreen) {
       win.setFullScreen(true);
     }
+
     win.on('resize', stateChangeHandler);
     win.on('move', stateChangeHandler);
     win.on('close', closeHandler);
@@ -222,7 +226,7 @@ module.exports = function (options) {
   try {
     readedData = jsonfile.readFileSync(fullStoreFileName);
     state = readedData;
-  } catch (err) {
+  } catch {
     // Don't care
   }
 
@@ -232,7 +236,7 @@ module.exports = function (options) {
   // Set state fallback values
   state = Object.assign({
     width: config.defaultWidth || 800,
-    height: config.defaultHeight || 600
+    height: config.defaultHeight || 600,
   }, state);
 
   return {
@@ -246,6 +250,6 @@ module.exports = function (options) {
     saveState,
     unmanage,
     manage,
-    resetStateToDefault
+    resetStateToDefault,
   };
 };

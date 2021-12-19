@@ -1,19 +1,21 @@
-import test from 'ava';
-import mockery from 'mockery';
-import sinon from 'sinon';
+'use strict';
+
+const test = require('ava');
+const mockery = require('mockery');
+const sinon = require('sinon');
 
 test.before(() => {
   const jsonfileMock = {
     writeFileSync() {},
-    readFileSync() {}
+    readFileSync() {},
   };
   const electronMock = {
     app: {getPath() {return '/temp';}},
     screen: {
       getDisplayMatching() {},
       getPrimaryDisplay() {},
-      getAllDisplays() {}
-    }
+      getAllDisplays() {},
+    },
   };
   mockery.registerAllowables(['./', 'path', 'object-assign', 'deep-equal', 'sinon', './lib/keys.js', './lib/is_arguments.js']);
   mockery.registerMock('electron', electronMock);
@@ -57,11 +59,11 @@ test('tries to read state file from the configured source', t => {
 test('considers the state invalid if without bounds', t => {
   const jsonfile = require('jsonfile');
   sinon.stub(jsonfile, 'readFileSync').returns({
-    width: 100
+    width: 100,
   });
 
   const state = require('.')({
-    defaultWidth: 200
+    defaultWidth: 200,
   });
 
   t.not(state.width, 100);
@@ -72,11 +74,11 @@ test('considers the state valid if without bounds but isMaximized is true', t =>
   const jsonfile = require('jsonfile');
   sinon.stub(jsonfile, 'readFileSync').returns({
     isMaximized: true,
-    width: 100
+    width: 100,
   });
 
   const state = require('.')({
-    defaultWidth: 200
+    defaultWidth: 200,
   });
 
   t.true(state.isMaximized);
@@ -88,11 +90,11 @@ test('considers the state valid if without bounds but isFullScreen is true', t =
   const jsonfile = require('jsonfile');
   sinon.stub(jsonfile, 'readFileSync').returns({
     isFullScreen: true,
-    width: 100
+    width: 100,
   });
 
   const state = require('.')({
-    defaultWidth: 200
+    defaultWidth: 200,
   });
 
   t.true(state.isFullScreen);
@@ -118,7 +120,7 @@ test('maximize and set the window fullscreen if enabled', t => {
     x: 0,
     y: 0,
     width: 100,
-    height: 100
+    height: 100,
   };
 
   const jsonfile = require('jsonfile');
@@ -127,7 +129,7 @@ test('maximize and set the window fullscreen if enabled', t => {
   const win = {
     maximize: sinon.spy(),
     setFullScreen: sinon.spy(),
-    on: sinon.spy()
+    on: sinon.spy(),
   };
 
   const state = require('.')({defaultWidth: 1000, defaultHeight: 2000});
@@ -144,11 +146,11 @@ test('saves the state to the file system', t => {
       x: 100,
       y: 100,
       width: 500,
-      height: 500
+      height: 500,
     }),
     isMaximized: sinon.stub().returns(false),
     isMinimized: sinon.stub().returns(false),
-    isFullScreen: sinon.stub().returns(false)
+    isFullScreen: sinon.stub().returns(false),
   };
 
   const screenBounds = {x: 0, y: 0, width: 100, height: 100};
@@ -173,7 +175,7 @@ test('saves the state to the file system', t => {
     height: 500,
     isMaximized: false,
     isFullScreen: false,
-    displayBounds: screenBounds
+    displayBounds: screenBounds,
   }));
 
   jsonfile.writeFileSync.restore();
@@ -190,7 +192,7 @@ test('Validate state if saved display is available and primary', t => {
     y: 20,
     width: 800,
     height: 600,
-    displayBounds
+    displayBounds,
   });
 
   const {screen} = require('electron');
@@ -200,7 +202,7 @@ test('Validate state if saved display is available and primary', t => {
 
   const state = require('.')({
     defaultWidth: 500,
-    defaultHeight: 300
+    defaultHeight: 300,
   });
 
   t.is(state.x, 10);
@@ -225,7 +227,7 @@ test('Validate state if saved display is available and secondary on right', t =>
     y: 1100,
     width: 800,
     height: 300,
-    displayBounds: secondaryDisplayBounds
+    displayBounds: secondaryDisplayBounds,
   });
 
   const {screen} = require('electron');
@@ -233,12 +235,12 @@ test('Validate state if saved display is available and secondary on right', t =>
   sinon.stub(screen, 'getPrimaryDisplay').returns({bounds: primaryDisplayBounds});
   sinon.stub(screen, 'getAllDisplays').returns([
     {bounds: primaryDisplayBounds},
-    {bounds: secondaryDisplayBounds}
+    {bounds: secondaryDisplayBounds},
   ]);
 
   const state = require('.')({
     defaultWidth: 500,
-    defaultHeight: 300
+    defaultHeight: 300,
   });
 
   t.is(state.x, 2000);
@@ -262,7 +264,7 @@ test('Validate state if saved display is available but window outside display bo
     y: 673,
     isMaximized: false,
     isFullScreen: false,
-    displayBounds: {x: 0, y: 0, width: 1680, height: 1050}
+    displayBounds: {x: 0, y: 0, width: 1680, height: 1050},
   });
 
   const {screen} = require('electron');
@@ -273,7 +275,7 @@ test('Validate state if saved display is available but window outside display bo
 
   const state = require('.')({
     defaultWidth: 500,
-    defaultHeight: 300
+    defaultHeight: 300,
   });
 
   t.is(state.x, 0);
@@ -295,7 +297,7 @@ test('Ensure window is visible at startup if saved display is unavailable and wa
     y: 0,
     width: 2550,
     height: 1430,
-    displayBounds: {x: 1920, y: 0, width: 2560, height: 1440}
+    displayBounds: {x: 1920, y: 0, width: 2560, height: 1440},
   });
 
   const {screen} = require('electron');
@@ -306,7 +308,7 @@ test('Ensure window is visible at startup if saved display is unavailable and wa
 
   const state = require('.')({
     defaultWidth: 500,
-    defaultHeight: 300
+    defaultHeight: 300,
   });
 
   t.is(state.x, 0);
@@ -327,7 +329,7 @@ test('Ensure window is visible at startup if saved display is unavailable and wa
     y: 0,
     width: 2550,
     height: 1430,
-    displayBounds: {x: -2560, y: 0, width: 2560, height: 1440}
+    displayBounds: {x: -2560, y: 0, width: 2560, height: 1440},
   });
 
   const {screen} = require('electron');
@@ -338,7 +340,7 @@ test('Ensure window is visible at startup if saved display is unavailable and wa
 
   const state = require('.')({
     defaultWidth: 500,
-    defaultHeight: 300
+    defaultHeight: 300,
   });
 
   t.is(state.x, 0);
@@ -359,7 +361,7 @@ test('Reset state to default values if saved display is unavailable', t => {
     y: -1000,
     width: 800,
     height: 600,
-    displayBounds: {x: -2560, y: -480, width: 2560, height: 1440}
+    displayBounds: {x: -2560, y: -480, width: 2560, height: 1440},
   });
 
   const {screen} = require('electron');
@@ -370,7 +372,7 @@ test('Reset state to default values if saved display is unavailable', t => {
 
   const state = require('.')({
     defaultWidth: 500,
-    defaultHeight: 300
+    defaultHeight: 300,
   });
 
   t.is(state.x, 0);

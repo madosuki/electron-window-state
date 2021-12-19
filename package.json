@@ -10,10 +10,11 @@
     "madosuki"
   ],
   "engines": {
-    "node": ">=8.0.0"
+    "node": ">=14.0.0"
   },
   "scripts": {
-    "test": "xo && ava"
+    "test": "xo && ava",
+    "autofix": "xo --fix"
   },
   "keywords": [
     "electron"
@@ -45,7 +46,8 @@
           "allowSingleLine": true
         }
       ],
-      "prefer-object-spread": 0
+      "prefer-object-spread": 0,
+      "unicorn/prefer-module": "off"
     }
   }
 }
