@@ -134,25 +134,36 @@ module.exports = function (options) {
   }
 
   function checkUpdatedStateCompareToReadedData() {
-    const checkUpdateDisplayBounds = () => {
+    if (!readedData) {
+      return true;
+    }
+
+    const checkWhetherHaveUpdatedDisplayBounds = () => {
       if (readedData.displayBounds.x !== state.displayBounds.x ||
-        readedData.displayBounds.y !== state.displayBounds.y ||
-        readedData.displayBounds.width !== state.displayBounds.width ||
-        readedData.displayBounds.height !== state.displayBounds.height) {
-          return true;
+          readedData.displayBounds.y !== state.displayBounds.y ||
+          readedData.displayBounds.width !== state.displayBounds.width ||
+          readedData.displayBounds.height !== state.displayBounds.height) {
+            return true;
         }
         return false;
     };
+    
+    const checkWhetherHaveUpdatedCoordAndSize = () => {
+      if (readedData.x !== state.x ||
+          readedData.y !== state.y || 
+          readedData.width !== state.width ||
+          readedData.height !== state.height ||
+          readedData.isMaximized !== state.isMaximized ||
+          readedData.isFullScreen !== state.isFullScreen) {
+            return true;
+        }
+      
+      return false; 
+    };
   
-    if (readedData.x !== state.x || 
-      readedData.y !== state.y || 
-      readedData.width !== state.width ||
-      readedData.height !== state.height ||
-      readedData.isMaximized !== state.isMaximized ||
-      readedData.isFullScreen !== state.isFullScreen || 
-      checkUpdateDisplayBounds()) {
-        return true;
-      }
+    if (checkWhetherHaveUpdatedCoordAndSize() || checkWhetherHaveUpdatedCoordAndSize()) {
+      return true;
+    }
 
     return false;
   }
