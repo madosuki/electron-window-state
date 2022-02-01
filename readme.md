@@ -14,7 +14,7 @@
 ## Install
 
 ```
-$ npm install --save @madosuki/electron-window-state
+$ npm install --save electron-window-state
 ```
 
 ## Usage
