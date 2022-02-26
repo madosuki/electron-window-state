@@ -130,6 +130,7 @@ module.exports = function (options) {
       state.isMaximized = win.isMaximized();
       state.isFullScreen = win.isFullScreen();
       state.displayBounds = screen.getDisplayMatching(winBounds).bounds;
+    // eslint-disable-next-line no-empty
     } catch (err) {}
   }
 
@@ -161,7 +162,7 @@ module.exports = function (options) {
       return false; 
     };
   
-    if (checkWhetherHaveUpdatedCoordAndSize() || checkWhetherHaveUpdatedCoordAndSize()) {
+    if (checkWhetherHaveUpdatedDisplayBounds() || checkWhetherHaveUpdatedCoordAndSize()) {
       return true;
     }
 
