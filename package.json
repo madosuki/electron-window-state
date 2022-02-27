@@ -20,11 +20,11 @@
     "electron"
   ],
   "dependencies": {
-    "electron": "^17.1.0",
     "jsonfile": "^6.1.0",
     "mkdirp": "^1.0.4"
   },
   "devDependencies": {
+    "electron": "^17.1.0",
     "@types/jsonfile": "^6.1.0",
     "@types/mkdirp": "^1.0.2",
     "ava": "^4.0.1",

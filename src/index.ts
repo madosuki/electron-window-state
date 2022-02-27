@@ -1,11 +1,7 @@
-import { app, screen, BrowserWindow, Rectangle, Display } from "electron";
-// const { app, screen, BrowserWindow, Rectangle, Display } = require("electron");
+import { app, screen, BrowserWindow, Display } from "electron";
 import path from "path";
-// const path = require("path");
 import mkdirp from "mkdirp";
-// const mkdirp = require("mkdirp");
 import jsonfile from "jsonfile";
-// const jsonfile = require("jsonfile")
 
 export type WindowBounds = {
     width: number;
@@ -232,9 +228,7 @@ module.exports = function (options?: Options): IWindowStateKeeper {
     
       state = tmp;
     }
-    
-    
-    
+        
     function updateState(win?: BrowserWindow) {
       win = win || winRef;
       if (!win || !state || !isManage) {
@@ -318,17 +312,9 @@ module.exports = function (options?: Options): IWindowStateKeeper {
       saveState();
     }
     
-    
-    
-    
-    
-    
     function getState() {
       return state;
     }
-    
-    
-    
     
     function saveState(win?: BrowserWindow) {
         if (!state) {
