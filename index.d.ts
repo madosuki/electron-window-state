@@ -3,7 +3,7 @@ import * as Electron from 'electron'
 declare function windowStateKeeper(opts: windowStateKeeper.Options): windowStateKeeper.State;
 
 declare namespace windowStateKeeper {
-    interface Options {
+    type Options = {
         /** The height that should be returned if no file exists yet. Defaults to `600`. */
         defaultHeight?: number;
         /** The width that should be returned if no file exists yet. Defaults to `800`. */
@@ -17,13 +17,28 @@ declare namespace windowStateKeeper {
         maximize?: boolean;
     }
 
-    interface State {
-        displayBounds: {
-          height: number;
-          width: number;
-        };
+    type WindowBounds = {
+        /** The saved width of loaded state. `defaultWidth` if the state has not been saved yet. */
+        width: number;
         /** The saved height of loaded state. `defaultHeight` if the state has not been saved yet. */
         height: number;
+        /** The saved x coordinate of the loaded state. `undefined` if the state has not been saved yet. */
+        x: number | undefined;
+        /** The saved y coordinate of the loaded state. `undefined` if the state has not been saved yet. */
+        y: number | undefined;
+    }
+    
+    type DisplayBounds = {
+        width: number;
+        height: number;
+        x: number;
+        y: number
+    }
+        
+    interface State {
+        displayBounds: DisplayBounds;
+        windowBounds: WindowBounds;
+
         /** true if the window state was saved while the window was in full screen mode. `undefined` if the state has not been saved yet. */
         isFullScreen: boolean;
         /** `true` if the window state was saved while the window was maximized. `undefined` if the state has not been saved yet. */
@@ -34,12 +49,6 @@ declare namespace windowStateKeeper {
         saveState: (window: Electron.BrowserWindow) => void;
         /** Removes all listeners of the managed `BrowserWindow` in case it does not need to be managed anymore. */
         unmanage: () => void;
-        /** The saved width of loaded state. `defaultWidth` if the state has not been saved yet. */
-        width: number;
-        /** The saved x coordinate of the loaded state. `undefined` if the state has not been saved yet. */
-        x: number | undefined;
-        /** The saved y coordinate of the loaded state. `undefined` if the state has not been saved yet. */
-        y: number | undefined;
     }
 }
 
