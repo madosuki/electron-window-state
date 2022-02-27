@@ -196,7 +196,7 @@ function checkUpdatedStateCompareToReadedData() {
 
   const checkWhetherHaveUpdatedDisplayBounds = () => {
       if (!readedData || !state) {
-          return false;
+          return true;
       }
 
       if (readedData.displayBounds.x !== state.displayBounds.x ||
@@ -211,7 +211,7 @@ function checkUpdatedStateCompareToReadedData() {
   
   const checkWhetherHaveUpdatedCoordAndSize = () => {
     if (!readedData || !state) {
-        return false;
+        return true;
     }
 
     if (readedData.windowBounds.x !== state.windowBounds.x ||
@@ -309,9 +309,10 @@ export function initWindowStateKeeper(options?: Options) {
 
 
 export function saveState(win?: BrowserWindow) {
-    if (!isManage) {
-        return;
+    if (!state) {
+      return;
     }
+
     // Update window state only if it was provided
     if (win) {
       updateState(win);
