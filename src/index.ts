@@ -70,16 +70,18 @@ function hasBounds() {
     Number.isInteger(state.windowBounds.height) && state.windowBounds.height > 0;
 }
 
-function windowWithinBounds(bounds: DisplayBounds) {
+function windowWithinBounds(bounds: DisplayBounds): boolean {
   if (!state) {
-      return false;
+      return true;
   }
 
+  const stateX = state.windowBounds.x || 0;
+  const stateY = state.windowBounds.y || 0;
   return (
-    state.windowBounds.x || 0 >= bounds.x &&
-    state.windowBounds.y || 0 >= bounds.y &&
-    state.windowBounds.x || 0 + state.windowBounds.width <= bounds.x + bounds.width &&
-    state.windowBounds.y || 0 + state.windowBounds.height <= bounds.y + bounds.height
+    stateX >= bounds.x &&
+    stateY >= bounds.y &&
+    stateX + state.windowBounds.width <= bounds.x + bounds.width &&
+    stateY + state.windowBounds.height <= bounds.y + bounds.height
   );
 }
 
