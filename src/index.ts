@@ -113,12 +113,12 @@ function resizeAndReplaceWindowForWorkArea(display: Display) {
   }
 
   // for top taskbar
-  if (stateY || 0 < display.bounds.height - display.workArea.height) {
+  if (stateY < display.bounds.height - display.workArea.height) {
     state.windowBounds.y = display.workArea.y;
   }
 
   // for bottom taskbar
-  if (stateY || 0 + state.windowBounds.height > display.workArea.height) {
+  if (stateY + state.windowBounds.height > display.workArea.height) {
     state.windowBounds.y = display.workArea.y + display.workArea.height - state.windowBounds.height;
   }
 }
@@ -195,6 +195,7 @@ function updateState(win?: BrowserWindow) {
   } catch (err) {}
 }
 
+/*
 function checkUpdatedStateCompareToReadedData() {
   if (!readedData) {
     return true;
@@ -238,6 +239,7 @@ function checkUpdatedStateCompareToReadedData() {
 
   return false;
 }
+*/
 
 function stateChangeHandler() {
   // Handles both 'resize' and 'move'
@@ -324,9 +326,11 @@ export function saveState(win?: BrowserWindow) {
       updateState(win);
     }
 
+    /*
     if (!checkUpdatedStateCompareToReadedData()) {
       return;
     }
+    */
 
     // Save state
     if (fullStoreFileName) {
