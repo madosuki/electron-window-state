@@ -54,307 +54,320 @@ const defaultDisplayBounds = {
   y: 0
 };
 
-export class WindowStateKeeper implements IWindowStateKeeper {
+let winRef: BrowserWindow | undefined;
+let isManage = false;
+const eventHandlingDelay = 100;
+let stateChangeTimer: any;
+let readedData: State | undefined;
+let state: State | undefined;
 
-  winRef: BrowserWindow | undefined;
-  isManage = false;
-  eventHandlingDelay = 100;
-  stateChangeTimer: any;
-  state: State | undefined;
-  readedData: State | undefined;
+function isNormal(win: BrowserWindow) {
+  if (!isManage) {
+      return false;
+  }
+  
+  return !win.isMaximized() && !win.isMinimized() && !win.isFullScreen();
+}
 
-  config: Options;
-  fullStoreFileName: string | undefined;
+function hasBounds() {
+  return state &&
+    Number.isInteger(state.windowBounds.x) &&
+    Number.isInteger(state.windowBounds.y) &&
+    Number.isInteger(state.windowBounds.width) && state.windowBounds.width > 0 &&
+    Number.isInteger(state.windowBounds.height) && state.windowBounds.height > 0;
+}
 
-  constructor(options?: Options) {
-    this.config = Object.assign({
+function windowWithinBounds(bounds: DisplayBounds) {
+  if (!state) {
+      return false;
+  }
+
+  return (
+    state.windowBounds.x || 0 >= bounds.x &&
+    state.windowBounds.y || 0 >= bounds.y &&
+    state.windowBounds.x || 0 + state.windowBounds.width <= bounds.x + bounds.width &&
+    state.windowBounds.y || 0 + state.windowBounds.height <= bounds.y + bounds.height
+  );
+}
+
+function resizeAndReplaceWindowForWorkArea(display: Display) {
+  if (!state || state.isFullScreen || state.isMaximized) {
+    return;
+  }
+
+  if (state.windowBounds.width > display.workArea.width) {
+    state.windowBounds.width = display.workArea.width;
+  }
+
+  if (state.windowBounds.height > display.workArea.height) {
+    state.windowBounds.height = display.workArea.height;
+  }
+
+  // for left taskbar
+  if (state.windowBounds.x || 0 < display.workArea.x) {
+    state.windowBounds.x = display.workArea.x;
+  }
+
+  // for right taskbar
+  if (state.windowBounds.x || 0 + state.windowBounds.width > display.workArea.width) {
+    state.windowBounds.x = display.workArea.x + display.workArea.width - state.windowBounds.width;
+  }
+
+  // for top taskbar
+  if (state.windowBounds.y || 0 < display.bounds.height - display.workArea.height) {
+    state.windowBounds.y = display.workArea.y;
+  }
+
+  // for bottom taskbar
+  if (state.windowBounds.y || 0 + state.windowBounds.height > display.workArea.height) {
+    state.windowBounds.y = display.workArea.y + display.workArea.height - state.windowBounds.height;
+  }
+}
+
+function ensureWindowVisibleOnSomeDisplay() {
+  const display = screen.getAllDisplays().find(v => windowWithinBounds(v.bounds));
+
+  if (!display) {
+    // Window is partially or fully not visible now.
+    // Reset it to safe defaults.
+    return resetStateToDefault();
+  }
+
+  resizeAndReplaceWindowForWorkArea(display);
+}
+
+function validateState() {
+
+  if (!state) {
+      return false;
+  }
+
+  const isValid = state && (hasBounds() || state.isMaximized || state.isFullScreen);
+  if (!isValid) {
+      return false;
+  }
+
+  if (hasBounds() && state.displayBounds) {
+    ensureWindowVisibleOnSomeDisplay();
+  }
+
+  return true;
+}
+
+function resetStateToDefault() {
+  const displayBounds = screen.getPrimaryDisplay().bounds;
+
+  // Reset state to default values on the primary display
+  let state: State = {
+    windowBounds: {
+      width: 800,
+      height: 600,
+      x: undefined,
+      y: undefined,
+    },
+    displayBounds: displayBounds,
+    isMaximized: false,
+    isFullScreen: false
+  };
+
+  return state;
+}
+
+
+
+function updateState(win?: BrowserWindow) {
+  win = win || winRef;
+  if (!win || !state || !isManage) {
+    return;
+  }
+  // Don't throw an error when window was closed
+  try {
+    const winBounds = win.getBounds();
+    if (isNormal(win)) {
+      state.windowBounds.x = winBounds.x;
+      state.windowBounds.y = winBounds.y;
+      state.windowBounds.width = winBounds.width;
+      state.windowBounds.height = winBounds.height;
+    }
+    state.isMaximized = win.isMaximized();
+    state.isFullScreen = win.isFullScreen();
+    state.displayBounds = screen.getDisplayMatching(winBounds).bounds;
+  // eslint-disable-next-line no-empty
+  } catch (err) {}
+}
+
+function checkUpdatedStateCompareToReadedData() {
+  if (!readedData) {
+    return true;
+  }
+
+  const checkWhetherHaveUpdatedDisplayBounds = () => {
+      if (!readedData || !state) {
+          return false;
+      }
+
+      if (readedData.displayBounds.x !== state.displayBounds.x ||
+          readedData.displayBounds.y !== state.displayBounds.y ||
+          readedData.displayBounds.width !== state.displayBounds.width ||
+          readedData.displayBounds.height !== state.displayBounds.height) {
+          return true;
+      }
+
+      return false;
+  };
+  
+  const checkWhetherHaveUpdatedCoordAndSize = () => {
+    if (!readedData || !state) {
+        return false;
+    }
+
+    if (readedData.windowBounds.x !== state.windowBounds.x ||
+        readedData.windowBounds.y !== state.windowBounds.y || 
+        readedData.windowBounds.width !== state.windowBounds.width ||
+        readedData.windowBounds.height !== state.windowBounds.height ||
+        readedData.isMaximized !== state.isMaximized ||
+        readedData.isFullScreen !== state.isFullScreen) {
+          return true;
+      }
+    
+    return false; 
+  };
+
+  if (checkWhetherHaveUpdatedDisplayBounds() || checkWhetherHaveUpdatedCoordAndSize()) {
+    return true;
+  }
+
+  return false;
+}
+
+function stateChangeHandler() {
+  // Handles both 'resize' and 'move'
+  clearTimeout(stateChangeTimer);
+  stateChangeTimer = setTimeout(updateState, eventHandlingDelay);
+}
+
+function closeHandler() {
+  updateState();
+}
+
+function closedHandler() {
+  // Unregister listeners and save state
+  unStateManage();
+  saveState();
+}
+
+
+
+let config: Options;
+let fullStoreFileName: string | undefined;
+
+export function getState() {
+  return state;
+}
+
+export function initWindowStateKeeper(options?: Options) {
+    config = Object.assign({
         file: 'window-state.json',
         path: app.getPath('userData'),
         maximize: true,
         fullScreen: true
     }, options);
 
-    if (this.config.path && this.config.file) {
-        this.fullStoreFileName = path.join(this.config.path, this.config.file);
+    if (config.path && config.file) {
+        fullStoreFileName = path.join(config.path, config.file);
     }
 
-    if (this.fullStoreFileName) {
+    if (fullStoreFileName) {
       // Load previous state
       try {
-          this.readedData = jsonfile.readFileSync(this.fullStoreFileName);
-          if (this.readedData) {
-              this.state = this.readedData;
-              this.validateState();
+          readedData = jsonfile.readFileSync(fullStoreFileName);
+          if (readedData) {
+              state = readedData;
+              const result = validateState();
+              if (!result) {
+                state = undefined;
+              } 
           }
       } catch (err) {
           // Don't care
       }
     }
 
-    if (!this.state) {
+    if (!state) {
       const windowBounds = defaultWindowBounds;
-      if (this.config) {
-        if (this.config.defaultHeight) {
-          windowBounds.height = this.config.defaultHeight;
+      if (config) {
+        if (config.defaultHeight) {
+          windowBounds.height = config.defaultHeight;
         }
 
-        if (this.config.defaultWidth) {
-          windowBounds.width = this.config.defaultWidth;
+        if (config.defaultWidth) {
+          windowBounds.width = config.defaultWidth;
         }
       }
 
-      this.state = {
+      state = {
         windowBounds: windowBounds,
         displayBounds: defaultDisplayBounds,
-        isFullScreen: true,
-        isMaximized: true,
+        isFullScreen: false,
+        isMaximized: false,
       };
     }
   }
 
 
- isNormal(win: BrowserWindow) {
-    if (!this.isManage) {
-        return false;
-    }
-    
-    return !win.isMaximized() && !win.isMinimized() && !win.isFullScreen();
-}
-
-hasBounds() {
-    return this.state &&
-      Number.isInteger(this.state.windowBounds.x) &&
-      Number.isInteger(this.state.windowBounds.y) &&
-      Number.isInteger(this.state.windowBounds.width) && this.state.windowBounds.width > 0 &&
-      Number.isInteger(this.state.windowBounds.height) && this.state.windowBounds.height > 0;
-}
-
-resetStateToDefault() {
-    if (!this.state) { return; }
-
-    const displayBounds = screen.getPrimaryDisplay().bounds;
-
-    // Reset state to default values on the primary display
-    this.state.windowBounds = {
-      width: this.config.defaultWidth || 800,
-      height: this.config.defaultHeight || 600,
-      x: undefined,
-      y: undefined,
-    };
-
-    this.state.displayBounds = displayBounds;
-}
-
-windowWithinBounds(bounds: DisplayBounds) {
-    if (!this.state) {
-        return false;
-    }
-
-    return (
-      this.state.windowBounds.x || 0 >= bounds.x &&
-      this.state.windowBounds.y || 0 >= bounds.y &&
-      this.state.windowBounds.x || 0 + this.state.windowBounds.width <= bounds.x + bounds.width &&
-      this.state.windowBounds.y || 0 + this.state.windowBounds.height <= bounds.y + bounds.height
-    );
-}
-
-resizeAndReplaceWindowForWorkArea(display: Display) {
-    if (!this.state || this.state.isFullScreen || this.state.isMaximized) {
-      return;
-    }
-
-    if (this.state.windowBounds.width > display.workArea.width) {
-      this.state.windowBounds.width = display.workArea.width;
-    }
-
-    if (this.state.windowBounds.height > display.workArea.height) {
-      this.state.windowBounds.height = display.workArea.height;
-    }
-
-    // for left taskbar
-    if (this.state.windowBounds.x || 0 < display.workArea.x) {
-      this.state.windowBounds.x = display.workArea.x;
-    }
-
-    // for right taskbar
-    if (this.state.windowBounds.x || 0 + this.state.windowBounds.width > display.workArea.width) {
-      this.state.windowBounds.x = display.workArea.x + display.workArea.width - this.state.windowBounds.width;
-    }
-
-    // for top taskbar
-    if (this.state.windowBounds.y || 0 < display.bounds.height - display.workArea.height) {
-      this.state.windowBounds.y = display.workArea.y;
-    }
-
-    // for bottom taskbar
-    if (this.state.windowBounds.y || 0 + this.state.windowBounds.height > display.workArea.height) {
-      this.state.windowBounds.y = display.workArea.y + display.workArea.height - this.state.windowBounds.height;
-    }
-}
-
-ensureWindowVisibleOnSomeDisplay() {
-    const display = screen.getAllDisplays().find(v => this.windowWithinBounds(v.bounds));
-
-    if (!display) {
-      // Window is partially or fully not visible now.
-      // Reset it to safe defaults.
-      return this.resetStateToDefault();
-    }
-
-    this.resizeAndReplaceWindowForWorkArea(display);
-}
-
-validateState() {
-
-    if (!this.state) {
-        return;
-    }
-
-    const isValid = this.state && (this.hasBounds() || this.state.isMaximized || this.state.isFullScreen);
-    if (!isValid) {
-        this.state = undefined;
-        return;
-    }
-
-    if (this.hasBounds() && this.state.displayBounds) {
-      this.ensureWindowVisibleOnSomeDisplay();
-    }
-}
-
-updateState(win?: BrowserWindow) {
-    win = win || this.winRef;
-    if (!win || !this.state || !this.isManage) {
-      return;
-    }
-    // Don't throw an error when window was closed
-    try {
-      const winBounds = win.getBounds();
-      if (this.isNormal(win)) {
-        this.state.windowBounds.x = winBounds.x;
-        this.state.windowBounds.y = winBounds.y;
-        this.state.windowBounds.width = winBounds.width;
-        this.state.windowBounds.height = winBounds.height;
-      }
-      this.state.isMaximized = win.isMaximized();
-      this.state.isFullScreen = win.isFullScreen();
-      this.state.displayBounds = screen.getDisplayMatching(winBounds).bounds;
-    // eslint-disable-next-line no-empty
-    } catch (err) {}
-}
-
-checkUpdatedStateCompareToReadedData() {
-    if (!this.readedData) {
-      return true;
-    }
-
-    const checkWhetherHaveUpdatedDisplayBounds = () => {
-        if (!this.readedData || !this.state) {
-            return false;
-        }
-
-        if (this.readedData.displayBounds.x !== this.state.displayBounds.x ||
-            this.readedData.displayBounds.y !== this.state.displayBounds.y ||
-            this.readedData.displayBounds.width !== this.state.displayBounds.width ||
-            this.readedData.displayBounds.height !== this.state.displayBounds.height) {
-            return true;
-        }
-
-        return false;
-    };
-    
-    const checkWhetherHaveUpdatedCoordAndSize = () => {
-      if (!this.readedData || !this.state) {
-          return false;
-      }
-
-      if (this.readedData.windowBounds.x !== this.state.windowBounds.x ||
-          this.readedData.windowBounds.y !== this.state.windowBounds.y || 
-          this.readedData.windowBounds.width !== this.state.windowBounds.width ||
-          this.readedData.windowBounds.height !== this.state.windowBounds.height ||
-          this.readedData.isMaximized !== this.state.isMaximized ||
-          this.readedData.isFullScreen !== this.state.isFullScreen) {
-            return true;
-        }
-      
-      return false; 
-    };
-  
-    if (checkWhetherHaveUpdatedDisplayBounds() || checkWhetherHaveUpdatedCoordAndSize()) {
-      return true;
-    }
-
-    return false;
-}
-
-saveState(win?: BrowserWindow) {
-    if (!this.isManage) {
+export function saveState(win?: BrowserWindow) {
+    if (!isManage) {
         return;
     }
     // Update window state only if it was provided
     if (win) {
-      this.updateState(win);
+      updateState(win);
     }
 
-    if (!this.checkUpdatedStateCompareToReadedData()) {
+    if (!checkUpdatedStateCompareToReadedData()) {
       return;
     }
 
     // Save state
-    if (this.fullStoreFileName) {
+    if (fullStoreFileName) {
         try {
-            mkdirp.sync(path.dirname(this.fullStoreFileName));
-            jsonfile.writeFileSync(this.fullStoreFileName, this.state);
+            mkdirp.sync(path.dirname(fullStoreFileName));
+            jsonfile.writeFileSync(fullStoreFileName, state);
         } catch (err) {
             // Don't care
         }
     }
 }
 
-stateChangeHandler() {
-    // Handles both 'resize' and 'move'
-    clearTimeout(this.stateChangeTimer);
-    this.stateChangeTimer = setTimeout(this.updateState, this.eventHandlingDelay);
-  }
 
-closeHandler() {
-  this.updateState();
-}
+export function startStateManage(win: BrowserWindow) {
 
-closedHandler() {
-  // Unregister listeners and save state
-  this.unmanage();
-  this.saveState();
-}
-
-manage(win: BrowserWindow) {
-
-    if (!this.state) {
+    if (!state) {
         return;
     }
 
-    if (this.config.maximize && this.state.isMaximized) {
+    if (config.maximize && state.isMaximized) {
       win.maximize();
     }
-    if (this.config.fullScreen && this.state.isFullScreen) {
+    if (config.fullScreen && state.isFullScreen) {
       win.setFullScreen(true);
     }
-    win.on('resize', this.stateChangeHandler);
-    win.on('move', this.stateChangeHandler);
-    win.on('close', this.closeHandler);
-    win.on('closed', this.closedHandler);
-    this.winRef = win;
-    this.isManage = true;
+    win.on('resize', stateChangeHandler);
+    win.on('move', stateChangeHandler);
+    win.on('close', closeHandler);
+    win.on('closed', closedHandler);
+    winRef = win;
+    isManage = true;
 }
 
-unmanage() {
-    if (this.winRef) {
-      this.winRef.removeListener('resize', this.stateChangeHandler);
-      this.winRef.removeListener('move', this.stateChangeHandler);
-      clearTimeout(this.stateChangeTimer);
-      this.winRef.removeListener('close', this.closeHandler);
-      this.winRef.removeListener('closed', this.closedHandler);
+export function unStateManage() {
+    if (winRef) {
+      winRef.removeListener('resize', stateChangeHandler);
+      winRef.removeListener('move', stateChangeHandler);
+      clearTimeout(stateChangeTimer);
+      winRef.removeListener('close', closeHandler);
+      winRef.removeListener('closed', closedHandler);
 
-      this.isManage = false;
+      isManage = false;
     }
-}
 }
