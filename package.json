@@ -4,7 +4,7 @@
   "description": "Simple module that helps to save and restore size and position of Electron windows.",
   "license": "MIT",
   "repository": "madosuki/electron-window-state",
-  "main": "index.js",
+  "main": "dist/index.js",
   "author": "Marcel Wiehle",
   "contributors": [
     "madosuki"
@@ -20,7 +20,7 @@
     "electron"
   ],
   "files": [
-    "index.js",
+    "dist/index.js",
     "index.d.ts"
   ],
   "dependencies": {
