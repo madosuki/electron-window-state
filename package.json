@@ -15,7 +15,8 @@
   "scripts": {
     "test": "xo && ava",
     "build": "tsc --build",
-    "postinstall": "npm install && npm run build"
+    "preinstall": "npm install",
+    "postinstall": "npm run build"
   },
   "keywords": [
     "electron"
