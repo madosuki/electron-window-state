@@ -14,7 +14,8 @@
   },
   "scripts": {
     "test": "xo && ava",
-    "build": "tsc --build"
+    "build": "tsc --build",
+    "postinstall": "npm run build"
   },
   "keywords": [
     "electron"
