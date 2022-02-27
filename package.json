@@ -18,7 +18,9 @@
     "postinstall": "npm run build"
   },
   "keywords": [
-    "electron"
+    "electron",
+    "jsonfile",
+    "mkdirp"
   ],
   "dependencies": {
     "jsonfile": "^6.1.0",
