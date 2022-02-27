@@ -90,6 +90,10 @@ function resizeAndReplaceWindowForWorkArea(display: Display) {
     return;
   }
 
+
+  const stateX = state.windowBounds.x || 0;
+  const stateY = state.windowBounds.y || 0;
+
   if (state.windowBounds.width > display.workArea.width) {
     state.windowBounds.width = display.workArea.width;
   }
@@ -99,22 +103,22 @@ function resizeAndReplaceWindowForWorkArea(display: Display) {
   }
 
   // for left taskbar
-  if (state.windowBounds.x || 0 < display.workArea.x) {
+  if (stateX < display.workArea.x) {
     state.windowBounds.x = display.workArea.x;
   }
 
   // for right taskbar
-  if (state.windowBounds.x || 0 + state.windowBounds.width > display.workArea.width) {
+  if (stateX + state.windowBounds.width > display.workArea.width) {
     state.windowBounds.x = display.workArea.x + display.workArea.width - state.windowBounds.width;
   }
 
   // for top taskbar
-  if (state.windowBounds.y || 0 < display.bounds.height - display.workArea.height) {
+  if (stateY || 0 < display.bounds.height - display.workArea.height) {
     state.windowBounds.y = display.workArea.y;
   }
 
   // for bottom taskbar
-  if (state.windowBounds.y || 0 + state.windowBounds.height > display.workArea.height) {
+  if (stateY || 0 + state.windowBounds.height > display.workArea.height) {
     state.windowBounds.y = display.workArea.y + display.workArea.height - state.windowBounds.height;
   }
 }
