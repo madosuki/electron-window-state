@@ -33,13 +33,6 @@ export type State = {
     isMaximized: boolean;
 }
 
-export interface IWindowStateKeeper {
-  state: State | undefined;
-  manage: (win: BrowserWindow) => void;
-  unmanage: () => void;
-  saveState: (win: BrowserWindow) => void;
-}
-
 const defaultWindowBounds = {
   width: 800,
   height: 600,
@@ -158,7 +151,7 @@ function resetStateToDefault() {
   const displayBounds = screen.getPrimaryDisplay().bounds;
 
   // Reset state to default values on the primary display
-  let state: State = {
+  let tmp: State = {
     windowBounds: {
       width: 800,
       height: 600,
@@ -170,7 +163,7 @@ function resetStateToDefault() {
     isFullScreen: false
   };
 
-  return state;
+  state = tmp;
 }
 
 
