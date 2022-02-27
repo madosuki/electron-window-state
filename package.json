@@ -19,11 +19,6 @@
   "keywords": [
     "electron"
   ],
-  "files": [
-    "index.ts",
-    "index.d.ts",
-    "tsconfig.json"
-  ],
   "dependencies": {
     "electron": "^17.1.0",
     "jsonfile": "^6.1.0",
