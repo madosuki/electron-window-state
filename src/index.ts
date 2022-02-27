@@ -40,6 +40,20 @@ export interface IWindowStateKeeper {
   saveState: (win: BrowserWindow) => void;
 }
 
+const defaultWindowBounds = {
+  width: 800,
+  height: 600,
+  x: undefined,
+  y: undefined
+};
+
+const defaultDisplayBounds = {
+  width: 0,
+  height: 0,
+  x: 0,
+  y: 0
+};
+
 export class WindowStateKeeper implements IWindowStateKeeper {
 
   winRef: BrowserWindow | undefined;
@@ -63,6 +77,7 @@ export class WindowStateKeeper implements IWindowStateKeeper {
     if (this.config.path && this.config.file) {
         this.fullStoreFileName = path.join(this.config.path, this.config.file);
     }
+
     if (this.fullStoreFileName) {
       // Load previous state
       try {
@@ -74,6 +89,26 @@ export class WindowStateKeeper implements IWindowStateKeeper {
       } catch (err) {
           // Don't care
       }
+    }
+
+    if (!this.state) {
+      const windowBounds = defaultWindowBounds;
+      if (this.config) {
+        if (this.config.defaultHeight) {
+          windowBounds.height = this.config.defaultHeight;
+        }
+
+        if (this.config.defaultWidth) {
+          windowBounds.width = this.config.defaultWidth;
+        }
+      }
+
+      this.state = {
+        windowBounds: windowBounds,
+        displayBounds: defaultDisplayBounds,
+        isFullScreen: true,
+        isMaximized: true,
+      };
     }
   }
 
