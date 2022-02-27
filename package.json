@@ -21,7 +21,8 @@
   ],
   "files": [
     "index.ts",
-    "index.d.ts"
+    "index.d.ts",
+    "tsconfig.json"
   ],
   "dependencies": {
     "electron": "^17.1.0",
