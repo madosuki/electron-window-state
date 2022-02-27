@@ -14,7 +14,7 @@
   },
   "scripts": {
     "test": "xo && ava",
-    "build": "tsc --outDir dist/"
+    "build": "tsc"
   },
   "keywords": [
     "electron"
