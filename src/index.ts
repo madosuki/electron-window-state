@@ -80,7 +80,28 @@ module.exports = function (options?: Options): IWindowStateKeeper {
       try {
           readedData = jsonfile.readFileSync(fullStoreFileName);
           if (readedData) {
-              state = readedData;
+
+              const windowBounds: WindowBounds = {
+                width: readedData.windowBounds.width,
+                height: readedData.windowBounds.height,
+                x: readedData.windowBounds.x,
+                y: readedData.windowBounds.y
+              };
+
+              const displayBounds: DisplayBounds = {
+                width: readedData.displayBounds.width,
+                height: readedData.displayBounds.height,
+                x: readedData.displayBounds.x,
+                y: readedData.displayBounds.y
+              };
+
+              state = {
+                windowBounds: windowBounds,
+                displayBounds: displayBounds,
+                isFullScreen: readedData.isFullScreen,
+                isMaximized: readedData.isMaximized
+              };
+
               const result = validateState();
               if (!result) {
                 state = undefined;
@@ -250,7 +271,6 @@ module.exports = function (options?: Options): IWindowStateKeeper {
       } catch (err) {}
     }
     
-    /*
     function checkUpdatedStateCompareToReadedData() {
       if (!readedData) {
         return true;
@@ -294,7 +314,6 @@ module.exports = function (options?: Options): IWindowStateKeeper {
     
       return false;
     }
-    */
     
     function stateChangeHandler() {
       // Handles both 'resize' and 'move'
@@ -326,11 +345,9 @@ module.exports = function (options?: Options): IWindowStateKeeper {
           updateState(win);
         }
     
-        /*
         if (!checkUpdatedStateCompareToReadedData()) {
           return;
         }
-        */
     
         // Save state
         if (fullStoreFileName) {
